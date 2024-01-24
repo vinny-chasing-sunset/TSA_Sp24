@@ -124,7 +124,7 @@ Let's use functions Acf() and Pacf() from package "forecast".
 ```
 
 
-## Trend Component
+## Trend Component - Linear Model
 
 Let's identify and remove trend component like we leaned on the recorded videos for M4. You start by fitting a linear model to $Y_t=\beta_0+\beta_1*t+\epsilon_t$. 
 
@@ -145,7 +145,8 @@ Let's identify and remove trend component like we leaned on the recorded videos 
 
 
 ```
-Note that blue line is our original series, red lien is our trend, green line is our original series minus the trend or in other words the detrended series. And in orange is the trend line for the detrended series which has slope 0 meaning we were able to effectively eliminate the trend with a linear model.
+Note that blue line is our original series, red line is our trend, green line is our original series minus the trend or in other words the detrended series. And in orange is the trend line for the detrended series which has slope 0 meaning we were able to effectively eliminate the trend with a linear model.
+
 
 ## Seasonal Component
 
