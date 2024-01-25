@@ -109,7 +109,9 @@ Fixed!
 Many of the functions we will use require a time series object. You can transform your data in a time series using the function *ts()*. 
 
 ```{r}
-
+ts_inflow_data <- ts(inflow_data[,2:(2+nhydro-1)],frequency=12) 
+#note that we are only transforming columns with inflow data, not the date columns  #start=my_date[1],end=my_date[nobs],
+head(ts_inflow_data,15)
 ```
 
 
@@ -118,15 +120,20 @@ Many of the functions we will use require a time series object. You can transfor
 Let's use functions Acf() and Pacf() from package "forecast".
 
 ```{r acf}
-
-
+#Acf and Pacf for HP1
+for(i in 1:nhydro){
+  par(mfrow=c(1,2))  #place plot side by side
+  Acf(ts_inflow_data[,i],lag.max=40,main=paste("Inflows HP",i,sep="")) 
+  # because I am not storing Acf() into any object, I don't need to specify plot=TRUE 
+  Pacf(ts_inflow_data[,i],lag.max=40,main=paste("Inflows HP",i,sep=""))
+}
 
 ```
 
 
 ## Trend Component - Linear Model
 
-Let's identify and remove trend component like we leaned on the recorded videos for M4. You start by fitting a linear model to $Y_t=\beta_0+\beta_1*t+\epsilon_t$. 
+Let's identify and remove trend component. You start by fitting a linear model to $Y_t=\beta_0+\beta_1*t+\epsilon_t$. 
 
 ```{r}
 #Create vector t
@@ -145,6 +152,7 @@ Let's identify and remove trend component like we leaned on the recorded videos 
 
 
 ```
+
 Note that blue line is our original series, red line is our trend, green line is our original series minus the trend or in other words the detrended series. And in orange is the trend line for the detrended series which has slope 0 meaning we were able to effectively eliminate the trend with a linear model.
 
 
