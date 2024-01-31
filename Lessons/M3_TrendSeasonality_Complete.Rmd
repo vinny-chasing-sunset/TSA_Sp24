@@ -174,7 +174,7 @@ ggplot(inflow_data, aes(x=my_date, y=inflow_data[,(1+iHP)])) +
             geom_smooth(aes(y=detrend_inflow_data),color="orange",method="lm") 
 
 ```
-Note that blue line is our original series, red lien is our trend, green line is our original series minus the trend or in other words the detrended series. And in orange is the trend line for the detrended series which has slope 0 meaning we were able to effectively eliminate the trend with a linear model.
+Note that blue line is our original series, red line is our trend, green line is our original series minus the trend or in other words the detrended series. And in orange is the trend line for the detrended series which has slope 0 meaning we were able to effectively eliminate the trend with a linear model.
 
 ## Seasonal Component
 
