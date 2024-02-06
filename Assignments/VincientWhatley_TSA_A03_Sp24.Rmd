@@ -1,0 +1,337 @@
+---
+title: "ENV 790.30 - Time Series Analysis for Energy Data | Spring 2024"
+subtitle: "Assignment 3 - Due date 02/01/24"
+author: "VincientWhatley"
+output: pdf_document
+geometry: margin=2.54cm
+editor_options: 
+  chunk_output_type: console
+---
+```{r}
+
+```
+  
+## Directions
+  
+You should open the .rmd file corresponding to this assignment on RStudio. The file is available on our class repository on Github. 
+
+Once you have the file open on your local machine the first thing you will do is rename the file such that it includes your first and last name (e.g., "LuanaLima_TSA_A02_Sp24.Rmd"). Then change "Student Name" on line 4 with your name. 
+
+Then you will start working through the assignment by  **creating code and output** that answer each question. Be sure to use this assignment document. Your report should contain the answer to each question and any plots/tables you obtained (when applicable).
+
+Please keep this R code chunk options for the report. It is easier for us to grade when we can see code and output together. And the tidy.opts will make sure that line breaks on your code chunks are automatically added for better visualization. 
+
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(echo = TRUE,tidy.opts=list(width.cutoff=80), tidy=FALSE) 
+```
+
+When you have completed the assignment, **Knit** the text and code into a single PDF file. Submit this pdf using Sakai. 
+
+## Questions 
+
+Consider the same data you used for A2 from the spreadsheet "Table_10.1_Renewable_Energy_Production_and_Consumption_by_Source.xlsx". The data comes from the US Energy Information and Administration and corresponds to the December 2022 **Monthly** Energy Review. Once again you will work only with the following columns: Total Biomass Energy Production, Total Renewable Energy Production, Hydroelectric Power Consumption. Create a data frame structure with these three time series only. 
+
+R packages needed for this assignment:"forecast","tseries", and "Kendall". Install these packages, if you haven't done yet. Do not forget to load them before running your script, since they are NOT default packages.\\
+
+```{r}
+#Load/install required package here
+library(forecast)
+library(Kendall)
+library(tseries)
+library(ggplot2)
+library(cowplot)
+library(gridExtra)
+
+```
+## Data Manipulation
+```{r}
+# reading in data with read.csv function
+energy_data_raw <- read.csv(file="./Data/Table_10.1_Renewable_Energy_Production_and_Consumption_by_Source.csv", header = TRUE, dec = ".", sep=",",stringsAsFactors = TRUE)
+
+#Triming data for specified colmunis
+energydata <- energy_data_raw[,1:6]
+
+#Removing unnecessary columns, renaming columns
+energydata <- energydata[, -c(2, 3)]
+colnames(energydata)=c("Month", "TBEP", "TREP","HEPC")
+
+#convert month day year
+
+mdy_date <- paste(energydata[,1]," 01",sep="")
+mdy_date1 <- as.Date(mdy_date, format = "%Y %B %d")  #function my from package lubridate
+head(mdy_date1)
+#add that to energydata 
+energydata <- cbind(mdy_date1,energydata[,2:4]) #cbind stands for column bind
+head(energydata)
+#Transform data
+ts_TBEP_data <- ts(energydata [,"TBEP"], start= c(1973,1), frequency = 12)
+ts_TREP_data <- ts(energydata [,"TREP"], start= c(1973,1), frequency = 12)
+ts_HEPC_data <- ts(energydata [,"HEPC"], start= c(1973,1), frequency = 12)
+```
+
+
+##Trend Component
+
+### Q1
+For each time series, i.e., Renewable Energy Production and Hydroelectric Consumption create three plots: one with time series, one with the ACF and with the PACF. You may use the some code form A2, but I want all the three plots side by side as in a grid.
+(Hint: use function `plot_grid()` from the `cowplot` package)
+```{r}
+#The par mfrow function allows us to create the grid for our plots.
+#This is a 1 row but 3 collumn grid.
+par(mfrow=c(1,3))
+
+#Plots for TBEP
+plot(ts_TBEP_data, main="Total Biomass Energy Production (TBEP)",ylab="Value",col="black")
+  acf(ts_TBEP_data, main="ACF for TBEP",col="green")
+    pacf(ts_TBEP_data, main="PACF for TBEP",col="blue")
+
+#Plot for TREP
+plot(ts_TREP_data, main="Total Renewable Energy Production (TREP)", ylab="Value", col="red")
+  acf(ts_TREP_data, main="ACF for TREP", col="purple")
+    pacf(ts_TREP_data, main="PACF for TREP", col="cyan")
+
+#Plot for HEPC
+plot(ts_HEPC_data, main="HydroelectricbConsumption (HEPC)",ylab="Value",col="blue")
+  acf(ts_HEPC_data, main="ACF for HEPC",col="red")
+    pacf(ts_HEPC_data, main = "PACF for HEPC",col="pink")
+
+#This is to reset the layout for any future plots.
+par(mfrow=c(1,1))
+```
+
+
+### Q2
+From the plot in Q1, do the series Total Biomass Energy Production, Total Renewable Energy Production, Hydroelectric Power Consumption appear to have a trend? If yes, what kind of trend?
+
+Both TREP and TBEP demonstrate the a clear exponential positive trend and 
+their ACF and PACF demonstrate a linear trend. As for the HEPC, 
+it was kind of hard to identify some sort of trend with the time series 
+plot but it becomes cyclicality.
+
+### Q3
+Use the *lm()* function to fit a linear trend to the three time series. Ask R to print the summary of the regression. Interpret the regression output, i.e., slope and intercept. Save the regression coefficients for further analysis.
+```{r}
+# Fit linear trend to TBEP time series
+
+lm_TBEP <-lm(ts_TBEP_data~time(ts_TBEP_data))
+summary(lm_TBEP)
+beta0_TBEP=as.numeric(lm_TBEP$coefficients[1])  #first coefficient is the intercept term or beta0
+beta1_TBEP=as.numeric(lm_TBEP$coefficients[2])  #second coefficient is the slope or beta1
+# Fit linear trend to TREP time series
+
+lm_TREP <- lm(ts_TREP_data~time(ts_TREP_data))
+summary(lm_TREP)
+beta0_TREP=as.numeric(lm_TREP$coefficients[1])  #first coefficient is the intercept term or beta0
+beta1_TREP=as.numeric(lm_TREP$coefficients[2])  #second coefficient is the slope or beta1
+
+# Fit linear trend to HEPC time serie
+
+lm_HEPC <- lm(ts_HEPC_data~time(ts_HEPC_data))
+summary(lm_HEPC)
+beta0_HEPC=as.numeric(lm_HEPC$coefficients[1])  #first coefficient is the intercept term or beta0
+beta1_HEPC=as.numeric(lm_HEPC$coefficients[2])  #second coefficient is the slope or beta1
+
+```
+ 
+### Q4
+Use the regression coefficients from Q3 to detrend the series. Plot the detrended series and compare with the plots from Q1. What happened? Did anything change?
+
+For the HEPC plots nothing really changed in the plots, they relatively similar.
+As for TBEP from 1990 to 2000 and 2010 to 2020 the seasonality 
+becomes more prominent. For TREP data it the detrended data become more defined
+and flatter.
+```{r}
+#Detrend TBEP time series
+detrended_TBEP <- ts_TBEP_data-(beta0_TBEP + beta1_TBEP * time(ts_TBEP_data))
+
+#Detrend TREP time series
+detrended_TREP <- ts_TREP_data-(beta0_TREP + beta1_TREP * time(ts_TREP_data))
+
+#Detrend HEPC time series
+detrended_HEPC <- ts_HEPC_data-(beta0_HEPC + beta1_HEPC * time(ts_HEPC_data))
+
+#Plot the detrended series
+par(mfrow = c(3, 1))
+
+#Detrended TBEP and original comparison
+plot(ts_TBEP_data, main="Renewable Energy Production (TBEP)",ylab="ts_TBEP_data",col="black")
+plot(detrended_TBEP, main = "Detrended Renewable Energy Production (TBEP)", ylab = "detrended_TBEP", col = "blue")
+
+
+#Detrended TREP
+plot(ts_TREP_data, main="Renewable Energy Production (TREP)", ylab="ts_TREP_data", col="red")
+plot(detrended_TREP, main = "Detrended Renewable Energy Production (TREP)", ylab = "detrended_TREP", col = "green")
+
+#Detrended HEPC
+plot(ts_HEPC_data, main="HydroelectricbConsumption (HEPC)",ylab="ts_HEPC_data",col="blue")
+plot(detrended_HEPC, main = "Detrended Hydroelectric Consumption (HEPC)", ylab = "detrended_HEPC", col = "red")
+
+# Reset the layout
+par(mfrow = c(1, 1))
+
+```
+
+### Q5
+Plot ACF and PACF for the detrended series and compare with the plots from Q1. You may use plot_grid() again to get them side by side. nut mot mandatory. Did the plots change? How?
+
+We see a similar story as the plots before in the previous questions. TREP and 
+TBEP, show slight decay in for the ACF and PACF for detrended data. HEPC shows 
+the same cyclicality for the both datasets.
+
+```{r}
+#The par mfrow function allows us to create the grid for our plots.
+#This is a 1 row but 3 collumn grid.
+par(mfrow=c(2,2))
+
+#Plots for TBEP
+acf(ts_TBEP_data, main="ACF for TBEP",col="green")
+pacf(ts_TBEP_data, main="PACF for TBEP",col="blue")
+  acf(detrended_TBEP, main="Detrended ACF for TBEP",col="green")
+  pacf(detrended_TBEP, main="Detrended PACF for TBEP",col="blue")
+
+#Plot for TREP
+acf(ts_TREP_data, main="ACF for TREP", col="purple")
+pacf(ts_TREP_data, main="PACF for TREP", col="cyan")
+  acf(detrended_TREP, main="Detrended ACF for TREP", col="purple")
+  pacf(detrended_TREP, main="Detrended PACF for TREP", col="cyan")
+#Plot for HEPC
+acf(ts_HEPC_data, main="ACF for HEPC",col="red")
+pacf(ts_HEPC_data, main = "PACF for HEPC",col="pink")
+  acf(detrended_HEPC, main="Detrended ACF for HEPC",col="red")
+  pacf(detrended_HEPC, main = "Detrended PACF for HEPC",col="pink")
+
+#This is to reset the layout for any future plots.
+par(mfrow=c(1,1))
+```
+
+## Seasonal Component
+
+Set aside the detrended series and consider the original series again from Q1 to answer Q6 to Q8.
+
+### Q6
+Just by looking at the time series and the acf plots, do the series seem to have a seasonal trend? No need to run any code to answer your question. Just type in you answer below.
+
+Yes, the TREP and TBEP data show a scalloped the peak at each 1.0 lag and 2.0 
+while the HEPC demonstrates the same trend for both the regular data and 
+detrended data.
+
+
+### Q7
+Use function *lm()* to fit a seasonal means model (i.e. using the seasonal dummies) the two time series. Ask R to print the summary of the regression. Interpret the regression output. From the results which series have a seasonal trend? Do the results match you answer to Q6?
+
+Both TREP and TBEP show a significat result while evaluating the r-squared
+level are both above .81. But this is not the same for HEPC data which is only
+at .4841. This is diffrent from what I saw in question 6.
+
+
+```{r}
+#asfactor funtion allows us to inlcude the dummy variables within the seasonal...
+#...means functions. The cycle function allows for us to get the cycle..
+#...positions in the cycle of each obs, kind of like a looping function.
+
+
+# Fit seasonal means model for TBEP
+lm_seasonal_TBEP <- lm(ts_TBEP_data~time(ts_TBEP_data)+as.factor(cycle(ts_TBEP_data)))
+beta_int_TBEP <- lm_seasonal_TBEP$coefficients[1]
+beta_coeff_TBEP <- lm_seasonal_TBEP$coefficients[2:13]
+summary(lm_seasonal_TBEP)
+
+# Fit seasonal means model for TREP
+lm_seasonal_TREP <- lm(ts_TREP_data~time(ts_TREP_data)+as.factor(cycle(ts_TREP_data)))
+beta_int_TREP <- lm_seasonal_TREP$coefficients[1]
+beta_coeff_TREP <- lm_seasonal_TREP$coefficients[2:13]
+summary(lm_seasonal_TREP)
+
+# Fit seasonal means model for HEPC
+lm_seasonal_HEPC <- lm(ts_HEPC_data~time(ts_HEPC_data)+as.factor(cycle(ts_HEPC_data)))
+beta_int_HEPC <- lm_seasonal_HEPC$coefficients[1]
+beta_coeff_HEPC <- lm_seasonal_HEPC$coefficients[2:13]
+summary(lm_seasonal_HEPC)
+
+```
+
+### Q8
+Use the regression coefficients from Q7 to deseason the series. Plot the deseason series and compare with the plots from part Q1. Did anything change?
+
+When compared to our plots in Q1 it is extremely apparent that plots have trends 
+farmore so than what we saw in question 1.
+
+
+```{r}
+cycle_values <- cycle(ts_TBEP_data)
+
+
+#Fit seasonal means model for TBEP
+lm_seasonal_TBEP <- lm(ts_TBEP_data~time(ts_TBEP_data)+          as.factor(cycle(ts_TBEP_data)))
+      beta_int_TBEP <- lm_seasonal_TBEP$coefficients[1]
+      beta_coeff_TBEP <- lm_seasonal_TBEP$coefficients[2:13]
+      
+lm_seasonal_TREP <- lm(ts_TREP_data~time(ts_TREP_data)+         as.factor(cycle(ts_TREP_data)))
+      beta_int_TREP <- lm_seasonal_TREP$coefficients[1]
+      beta_coeff_TREP <- lm_seasonal_TREP$coefficients[2:13]
+      
+      
+lm_seasonal_HEPC <- lm(ts_HEPC_data~time(ts_HEPC_data)+         as.factor(cycle(ts_HEPC_data)))
+      beta_int_HEPC <- lm_seasonal_HEPC$coefficients[1]
+      beta_coeff_HEPC <- lm_seasonal_HEPC$coefficients[2:13]
+
+#using modulo operator
+cycle_values_TBEP <-cycle(ts_TBEP_data)
+     seasonal_component_TBEP <- beta_int_TBEP+beta_coeff_TBEP*(cycle_values-1)    %% length(beta_coeff_TBEP)+1
+
+cycle_values_TREP <-cycle(ts_TREP_data)
+      seasonal_component_TREP <- beta_int_TREP+beta_coeff_TREP*(cycle_values-1)    %% length(beta_coeff_TREP)+1
+  
+cycle_values_HEPC <-cycle(ts_HEPC_data)
+      seasonal_component_HEPC <- beta_int_HEPC+beta_coeff_HEPC*(cycle_values-1)    %% length(beta_coeff_HEPC)+1
+# Deseasoning  TBEP series
+deseasoned_TBEP <-ts_TBEP_data-seasonal_component_TBEP
+
+deseasoned_TREP <-ts_TREP_data-seasonal_component_TREP
+
+deseasoned_HEPC <-ts_TBEP_data-seasonal_component_HEPC
+
+# Set up a 3-row, 1-column layout for the plot
+par(mfrow = c(3, 1))
+
+#Plot of deseasoned TBEP series
+plot(deseasoned_TBEP, main = "Deseasoned Renewable Energy Production (TBEP)", ylab = "Deseasoned Value", col = "blue")
+
+plot(deseasoned_TREP, main = "Deseasoned Renewable Energy Production (TREP)", ylab = "Deseasoned Value", col = "black")
+
+plot(deseasoned_HEPC, main = "Deseasoned Hydroelectric Consumption (HEPC)", ylab = "Deseasoned Value", col = "purple")
+
+# Reset the layout
+par(mfrow = c(1, 1))
+
+```
+
+
+### Q9
+Plot ACF and PACF for the deseason series and compare with the plots from Q1. You may use plot_grid() again to get them side by side. nut mot mandatory. Did the plots change? How?
+
+You are able to see the change for all the graphs there are a lot more 
+cyclicality which is seen through all the graphs of TS, ACF, PACF for detrended
+data.
+
+```{r}
+
+
+###This code uses the tsdisplay function to show time series components,ACF and PACF plots.
+
+#Display time series components for original and deseasoned series
+tsdisplay(ts_TBEP_data, main = "Original TBEP Series", col = c("blue", "green"))
+tsdisplay(deseasoned_TBEP, main = "Deseasoned TBEP Series", col = c("blue", "green"))
+
+
+#TREP data
+tsdisplay(ts_TREP_data, main = "Original TREP Series", col = c("blue", "green"))
+tsdisplay(deseasoned_TREP, main = "Deseasoned _TREP Series", col = c("blue", "green"))
+
+#HEPC data
+tsdisplay(ts_HEPC_data, main = "Original _HEPC Series", col = c("blue", "green"))
+tsdisplay(deseasoned_HEPC, main = "Deseasoned TBEP Series", col = c("blue", "green"))
+
+```
+
+
