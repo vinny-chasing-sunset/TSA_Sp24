@@ -61,7 +61,7 @@ autoplot(ts_wind_data) +
 
 ## Using pre-built function to clean series
 
-tsclean() from package 'forecast' identify and replace outliers and missing values in a time series using linear interpolation.
+tsclean() from package 'forecast' identify and replace outliers and missing values in a time series using linear interpolation. This should be used with some caution!!
 
 ```{r}
 
@@ -75,6 +75,11 @@ autoplot(clean_wind_data, series="Wind Clean") +
   
 
 ```
+
+If you want to handle missing data, but do not want to remove outliers, here are two other opion that will replace them using linear interpolation.
+
+`forecast::na.interp()`
+`zoo::na.approx()`
 
 
 
