@@ -41,6 +41,7 @@ vignettes/*.pdf
 # Rproject files
 *.Rproj
 *_KEY.Rmd
+*_KEY.pdf
 *_FIXED.Rmd
 *_TOPOST/
 *_TODELETE.Rmd
