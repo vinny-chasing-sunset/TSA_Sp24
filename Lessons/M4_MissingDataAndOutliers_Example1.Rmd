@@ -53,7 +53,7 @@ my_date <- my(my_date)  #function my from package lubridate
 
 #add that to inflow_data and store in a new data frame 
 inflow_data <- cbind(my_date,raw_inflow_data[,3:(3+nhydro-1)])
-head(inflow_data)
+head(inflow_data,24)
 
 #Remove last for rows by replacing current data frame
 inflow_data <- inflow_data[1:(nobs-4),]
@@ -102,7 +102,7 @@ The random component is the time series without seasonal and trend component. Le
 ```{r}
 #Using R decompose function
 iHP=1
-decompose_inflow_data=decompose(ts_inflow_data[,iHP],"additive")
+decompose_inflow_data <- decompose(ts_inflow_data[,iHP],"additive")
 plot(decompose_inflow_data)
 
 #Inspect random component
@@ -209,6 +209,7 @@ ggplot(df_inflow_random, aes(x=date, y=inflow)) +
             geom_line() +
             geom_abline(slope=0,intercept=3*sd_inflow,color="red") +
             geom_abline(slope=0,intercept=-3*sd_inflow,color="red")
+
 ```
 
 Note we still seem to have some outliers. You can repeat the process until the next extreme value is not an outlier or write a loop as below.
