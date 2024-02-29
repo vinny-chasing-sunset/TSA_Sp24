@@ -63,7 +63,7 @@ electricity_price_processed <-
   rename( Commercial = commercial.cents.per.kilowatthour ) %>% 
   rename( Industrial = industrial.cents.per.kilowatthour ) 
 
-#Generating a box plot by factor where factor is month of the year
+#Generating a plot
 TS_Plot <- 
   ggplot(electricity_price_processed, aes(x=Month, y=Residential)) +
       geom_line()
@@ -204,6 +204,7 @@ plot_grid(
   autoplot(Pacf(deseasonal_residential_price_diff, lag = 40, plot=FALSE),  
                   main = "Diff/Deseason Residential Electricity Price"),
   nrow=1
+  
 )
 ```
 
