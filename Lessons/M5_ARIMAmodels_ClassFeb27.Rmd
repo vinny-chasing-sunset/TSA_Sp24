@@ -63,7 +63,7 @@ electricity_price_processed <-
   rename( Commercial = commercial.cents.per.kilowatthour ) %>% 
   rename( Industrial = industrial.cents.per.kilowatthour ) 
 
-#Generating a box plot by factor where factor is month of the year
+#Generating a plot
 TS_Plot <- 
   ggplot(electricity_price_processed, aes(x=Month, y=Residential)) +
       geom_line()
@@ -204,6 +204,7 @@ plot_grid(
   autoplot(Pacf(deseasonal_residential_price_diff, lag = 40, plot=FALSE),  
                   main = "Diff/Deseason Residential Electricity Price"),
   nrow=1
+  
 )
 ```
 
@@ -293,7 +294,8 @@ Now that you have played with different order, let's try the auto.arima() functi
 
 ```{r}
 
-
+Model_autofit <- auto.arima(deseasonal_residential_price,max.D=0,max.P=0,max.Q=0)
+print(Model_autofit)
 
 ```
 
@@ -325,7 +327,12 @@ One way of checking goodness of fit is by plotting observed versus fitted value 
 ```{r}
 
 autoplot(deseasonal_residential_price,series="Observed")+
-  autolayer(???)
+  autolayer(Model_111$fitted,series="ARIMA(1,1,1)")+
+  autolayer(Model_211$fitted,series="ARIMA(2,1,1)")+
+  autolayer(Model_212$fitted,series="ARIMA(2,1,2)")+
+  autolayer(Model_011$fitted,series="ARIMA(0,1,1)")
+
+
 
 
 ```
